@@ -1,4 +1,3 @@
 include:
-  - docker/elasticsearch/compose.yaml
-  - docker/opentelemetry/compose.yaml
+  - docker/minio/compose.yaml
   - docker/airflow/compose.yaml
