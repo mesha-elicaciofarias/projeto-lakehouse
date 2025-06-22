@@ -1,0 +1,4 @@
+include:
+  - docker/elasticsearch/compose.yaml
+  - docker/opentelemetry/compose.yaml
+  - docker/airflow/compose.yaml
