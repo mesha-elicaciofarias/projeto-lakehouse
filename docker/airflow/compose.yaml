@@ -121,8 +121,8 @@ services:
     container_name: airflow-database
     hostname: airflow-database
     environment:
-      POSTGRES_USER: airflow
-      POSTGRES_PASSWORD: password098
+      POSTGRES_USER: ${_AIRFLOW_WWW_USER_USERNAME}
+      POSTGRES_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD}
       POSTGRES_DB: airflow
     volumes:
       - airflow-database-data:/var/lib/postgresql/data
