@@ -6,8 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "apache-airflow==3.0.2",
+    "apache-airflow-providers-apache-spark>=5.3.0",
     "apache-airflow-providers-papermill>=3.11.0",
-    "grpcio-status>=1.71.0",
     "ipykernel>=6.29.5",
-    "pyspark==3.5.5",
 ]
