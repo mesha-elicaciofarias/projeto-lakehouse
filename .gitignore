@@ -16,3 +16,6 @@ docker/airflow/config/airflow.cfg
 docker/airflow/logs/notebooks/*.ipynb
 docker/airflow/logs/dag_processor/
 docker/airflow/logs/dag_id*
+
+# arquivo local de conexao
+src/dags/**/**/variables/*.json
