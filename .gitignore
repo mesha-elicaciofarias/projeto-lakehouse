@@ -8,3 +8,11 @@ wheels/
 
 # Virtual environments
 .venv
+.env
+uv.lock
+
+#airflow
+docker/airflow/config/airflow.cfg
+docker/airflow/logs/notebooks/*.ipynb
+docker/airflow/logs/dag_processor/
+docker/airflow/logs/dag_id*
