@@ -1,9 +1,9 @@
 # Objetivo  
-O objetivo desta POC (Prova de conceito) e montar uma plataforma de dados   mínima usando ferramentas de código aberta.  
+O objetivo desta POC (Prova de conceito) e montar uma plataforma de dados   mínima usando ferramentas de código aberta. 
 
 # Objetivos específicos  
-- Montar uma plataforma de dados mínima com as camadas de orquestração, processamento e armazenamento  
-- Usar ferramentas de código aberto  
+- Montar uma plataforma de dados mínima com as camadas de orquestração, processamento e armazenamento 
+- Usar ferramentas de código aberto 
 
 # Ferramentas usadas  
 - [airflow - 3.0.2](https://airflow.apache.org/docs/apache-airflow/stable/index.html)  
