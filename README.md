@@ -9,7 +9,8 @@ O objetivo desta POC (Prova de conceito) e montar uma plataforma de dados   mín
 - [airflow - 3.0.2](https://airflow.apache.org/docs/apache-airflow/stable/index.html)  
 - [pyspark - 4.0.0](https://spark.apache.org/docs/latest/api/python/index.html#)  
 - [delta lake - 4.0.0](https://docs.delta.io/latest/index.html)
-- [minio - RELEASE.2025-04-22T22-12-26Z](https://min.io/docs/minio/kubernetes/upstream/index.html)  
+- [minio - RELEASE.2025-04-22T22-12-26Z](https://min.io/docs/minio/kubernetes/upstream/index.html)
+- [papermil - 2.4.0](https://papermill.readthedocs.io/en/latest/index.html)  
 
 # Configuração dos serviços  
 > Atenção! Este projeto deve ser executado em uma maquina Linux ou wsl2 do windows  
@@ -81,3 +82,8 @@ Acesse: http://localhost:8080
 
 Você deverá ver a interface do Apache Airflow, onde poderá gerenciar DAGs, conexões e variáveis.  
 
+## 11 - Configuração do MinIO
+
+Após subir o container do MinIO, faça login na interface web (normalmente em htt://localhost:9000) é preciso verificar qual porta foi definida.  
+Use as credenciais do .env para logar (access key e secret key ou como ficou definida na hora da criação).  
+Crie os buckets necessários(exemplo: landing, raw, silver, etc.).  
