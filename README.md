@@ -44,7 +44,7 @@ $ docker network create projeto-lakehouse
 $ cp .env.template .env  
 ~~~  
 
-## 6 - Abra um editor o editor de código de sua preferência.  
+## 6 - Abra um editor de código de sua preferência.  
 > Sugestão! Use o vscode.  
 - No Windows com wsl2, click [aqui](https://learn.microsoft.com/pt-br/windows/wsl/tutorials/wsl-vscode) para saber como instalar e usar.  
 - No Linux, click [aqui](https://code.visualstudio.com/docs/setup/linux) para saber como instalar e usar.  
@@ -61,29 +61,82 @@ $ docker compose up -d
 ~~~  
   
 ## 9 - Verifique o status dos serviços Docker  
-~~bash  
+~~~bash  
 
-$ docker ps  
+$ docker ps
+
+~~~  
 Você deverá ver os contêineres para Airflow (database, scheduler, worker), MinIO, Postgres, etc., com o status Up.  
 
 Para verificar os logs de um serviço específico (substitua airflow_api_server pelo nome do serviço que deseja inspecionar, como minio, airflow_scheduler etc.):  
 
-~~bash  
+~~~bash  
 
-$ docker compose logs -f airflow_dag-processor  
+$ docker compose logs -f airflow_dag-processor
+
+~~~  
 Pressione Ctrl + C para sair dos logs.  
 
 ## 10 - Acesse as interfaces dos serviços  
-Com os serviços rodando, você pode acessar as interfaces web no seu navegador:  
 
-Airflow UI:  
+  Acesse o MinIO pela interface web em:  
 
-Acesse: http://localhost:8080  
+~~~bash 
 
-Você deverá ver a interface do Apache Airflow, onde poderá gerenciar DAGs, conexões e variáveis.  
+http://localhost:10000  
 
-## 11 - Configuração do MinIO
+~~~ 
 
-Após subir o container do MinIO, faça login na interface web (normalmente em htt://localhost:9000) é preciso verificar qual porta foi definida.  
-Use as credenciais do .env para logar (access key e secret key ou como ficou definida na hora da criação).  
-Crie os buckets necessários(exemplo: landing, raw, silver, etc.).  
+Conforme definido no docker-compose.yml, certifique-se de que essa porta foi mapeada corretamente no seu ambiente.  
+
+Faça login utilizando as credenciais definidas no arquivo .env:  
+
+Access Key: MINIO_ROOT_USER  
+
+Key: MINIO_ROOT_PASSWORD  
+
+Para a criação dos buckets, após o login, siga os passos abaixo que representam as camadas da arquitetura de medalhão: 
+
+No menu lateral esquerdo, clique em Administrator. 
+
+Em seguida, clique em Buckets. 
+
+No canto superior direito da tela, clique em Create Bucket. 
+
+Crie o bucket inicial chamado landing e clique em Create Bucket para confirmar. 
+
+Para verificar a criação, acesse o menu Object Browser (no menu esquerdo) e confira se o bucket landing aparece na lista. 
+
+Repita o processo para criar os demais buckets necessários, como: bronze, silver, gold, entre outros. 
+
+Esses buckets serão usados para armazenar os dados nos diferentes estágios de processamento do pipeline. 
+
+
+## 11 - Configuração da conexão do MinIO 
+
+Para permitir a comunicação entre o pipeline e o MinIO, foi necessário configurar uma conexão chamada minio_connection. 
+
+Essa configuração foi realizada dentro do notebook, por meio da criação de um arquivo .json com as credenciais e o endpoint de acesso. O arquivo foi salvo no seguinte caminho: 
+
+src/dags/geography/coordinates/variables/minio_connection.json 
+O conteúdo do arquivo inclui as seguintes informações: 
+
+"endpoint": URL interna de acesso ao MinIO 
+
+"access_key": chave de acesso (gerada pelo MinIO)
+
+"key": chave secreta (também gerada pelo MinIO)
+
+Como gerar as credenciais: 
+
+Acesse o MinIO pela interface web (http://localhost:10000).
+
+No menu lateral, clique em Access Keys.
+
+Clique em Create Access Key.
+
+Copie os valores de Access Key e Secret Key gerados.
+
+Preencha o arquivo minio_connection.json com essas informações.
+
+Esse arquivo será utilizado posteriormente para autenticação automática nas DAGs ou scripts que interagem com o armazenamento do MinIO.
