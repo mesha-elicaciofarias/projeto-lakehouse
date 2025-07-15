@@ -140,3 +140,46 @@ Copie os valores de Access Key e Secret Key gerados.
 Preencha o arquivo minio_connection.json com essas informações.
 
 Esse arquivo será utilizado posteriormente para autenticação automática nas DAGs ou scripts que interagem com o armazenamento do MinIO.
+
+## 12 - Configuração do ambiente de desenvolvimento
+
+Ambiente Python com uv, clique [aqui](https://docs.astral.sh/uv/) para saber como instalar e usar.
+
+Após configurar os serviços, o ambiente Python foi instalado e gerenciado com a ferramenta uv, que oferece uma forma rápida e moderna de instalar dependências Python. 
+
+O terminal foi aberto na pasta raiz do projeto dentro do VSCode, onde o comando de instalação das dependências foi executado (com base no arquivo pyproject.toml).
+
+~~~bash 
+
+uv sync 
+
+~~~ 
+
+O teste de funcionamento foi bem-sucedido. A aplicação Spark processou os dados conforme o esperado e os arquivos foram salvos corretamente no MinIO no formato Delta Lake. Isso valida a capacidade do ambiente de:
+
+Processar dados com Apache Spark.
+
+Utilizar as capacidades transacionais e de versionamento do Delta Lake.
+
+Persistir dados de forma eficiente em um armazenamento de objetos compatível com S3 (MinIO).
+
+A arquitetura demonstrada aqui estabelece uma base sólida para pipelines de dados escaláveis e confiáveis, utilizando tecnologias de código aberto para gerenciamento de data lakes.
+
+## 13 Validando de infraestrura: Spark, Delta Lake e MinIO para um Data Lake 
+
+Este repositório documenta um teste de validação da infraestrutura de dados, executado localmente no VS Code. O objetivo foi verificar se a escrita de dados no formato Delta Lake para um bucket MinIO (rodando via Docker) funcionava corretamente utilizando o Apache Spark com PySpark. 
+
+O que foi testado: 
+
+Execução local do código PySpark no VS Code, arquivo : src_lnd_geography_coordinates.ipynb 
+
+Gravação de arquivos Delta (.parquet) em um bucket MinIO (S3 compatível) 
+
+Integração com bibliotecas essenciais: delta-spark, hadoop-aws, aws-java-sdk 
+
+Persistência bem-sucedida dos dados, com estrutura Delta armazenada no MinIO 
+
+Resultado: A escrita no formato Delta funcionou conforme esperado, validando a comunicação entre Spark e MinIO e confirmando que a infraestrutura está pronta para os próximos passos do pipeline. 
+
+
+
