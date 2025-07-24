@@ -182,7 +182,6 @@ Persistência bem-sucedida dos dados, com estrutura Delta armazenada no MinIO
 Resultado: A escrita no formato Delta funcionou conforme esperado, validando a comunicação entre Spark e MinIO e confirmando que a infraestrutura está pronta para os próximos passos do pipeline. 
 
 
-=======
 ## 14 - Ativação do Apache Airflow e Configuração da DAG
 
 Para resolver o erro de conexão da DAG `geography_coordinates` no Airflow, foram realizados os seguintes passos:
@@ -205,4 +204,145 @@ Para resolver o erro de conexão da DAG `geography_coordinates` no Airflow, fora
 
 Este procedimento validou a integração do Airflow com a infraestrutura de dados local, garantindo a execução confiável das pipelines.
 
----
+## 15 Criação da DAG ibge_pme e Organização do Fluxo de Diretórios 
+
+Para estruturar o pipeline de ingestão e transformação dos dados da Pesquisa Mensal de Emprego (PME/IBGE), foi criada a DAG ibge_pme no Airflow, com execução agendada a cada 3 minutos (schedule="*/3 * * * *"). A DAG está localizada no caminho: 
+
+~~~bash 
+
+/projeto-lakehouse/src/dags/ibge/pme/ibge_pme.py 
+
+~~~ 
+
+Essa DAG executa um fluxo dividido nas seguintes camadas: 
+
+- Landing: ingestão inicial dos dados 
+
+- Bronze: padronização e limpeza 
+
+- Silver: transformação e enriquecimento 
+
+Cada camada possui um notebook .ipynb responsável por sua respectiva etapa de processamento.  
+
+Estrutura de Diretórios e Arquivos:  
+Abaixo está a hierarquia de pastas utilizada para organizar os notebooks da DAG ibge_pme: 
+
+~~~bash 
+
+ibge/ 
+└── pme/ 
+    ├── ibge_pme.py                      
+    └── tasks/ 
+        ├── landing/ 
+        │   └── src_lnd_ibge_pme.ipynb     
+        ├── bronze/ 
+        │   └── lnd_brz_pme.ipynb          
+        └── silver/ 
+            └── brz_slv_pme.ipynb          
+
+~~~ 
+
+Cada notebook é executado por um PapermillOperator. 
+
+### Lógica de Dependência entre Tarefas
+
+A DAG define a seguinte sequência entre as tasks: 
+
+~~~bash 
+
+landing → bronze → silver
+
+~~~ 
+
+Essa DAG utiliza notebooks que acessam o MinIO por meio da variável minio_connection, configurada previamente no Airflow (conforme explicado na seção anterior).
+
+## 16 Detalhamento Técnico da Integração: Ingestão de Dados e Execução com Airflow
+
+Após a criação da DAG `ibge_pme` e a organização dos notebooks por camadas (Landing, Bronze, Silver), foram implementadas as seguintes etapas para viabilizar a ingestão de dados e execução das tarefas via Airflow:
+
+### 1. Desenvolvimento do Processo de Ingestão de Dados
+
+Foi desenvolvido um fluxo de ingestão baseado no arquivo `ibge_ipca_amplo.py`. Nele, foi criada a função `ibge_ipca_amplo()` que realiza as seguintes ações:
+
+- Define o caminho para os dados de entrada na camada **Landing**.
+- Cria a conexão com o **MinIO** utilizando as configurações passadas via variável `minio_connection`.
+- Define a lógica para ler os arquivos `.json` com **listas aninhadas**, desaninhá-las e transformar os dados em formato tabular.
+- Salva os dados tratados no Data Lake no formato de **tabela Delta**.
+
+Essa etapa é executada por meio do notebook `src_lnd_ibge_ipca_amplo.ipynb`, que possui o seguinte fluxo:
+
+1. **Importação de bibliotecas**.
+2. **Criação da conexão com o MinIO** via PySpark.
+3. **Criação do SparkSession**.
+4. **Leitura e transformação dos arquivos JSON com listas aninhadas**.
+5. **Gravação no MinIO** no formato Delta.
+6. **Configuração básica de logging** para monitoramento.
+
+### 2. Visualização dos Dados no MinIO
+
+Com os dados processados, é possível visualizar os arquivos diretamente no navegador:
+
+- Acesse o MinIO via browser.
+- Clique em **"Buckets"** → Selecione o bucket da camada `landing`.
+- O lado esquerdo mostrará a **quantidade de objetos e uso de espaço**.
+- Clique em **"Object Browser"** para navegar entre pastas e localizar os arquivos armazenados.
+
+### 3. Correções Necessárias para Execução via Airflow
+
+Durante os testes iniciais de execução da DAG via Airflow, foram encontrados alguns problemas que exigiram ações manuais para garantir o funcionamento correto. Abaixo estão os passos realizados:
+
+#### Etapa 1 – Criação do Diretório de Logs no Container
+
+Para que o Papermill possa salvar os notebooks de saída com os parâmetros executados, é necessário que o diretório de destino exista. Isso foi feito manualmente dentro do container do `airflow-worker`:
+
+~~~bash
+docker exec -it airflow-worker bash
+mkdir -p /opt/airflow/logs/tasks/landing
+~~~
+
+> Esse caminho é utilizado automaticamente pelo PapermillOperator para armazenar os notebooks executados com parâmetros.
+
+#### Etapa 2 – Adição da Tag `parameters` no Notebook
+
+O Papermill precisa saber quais células contêm parâmetros que devem ser substituídos em tempo de execução. Para isso, a célula onde está a variável `minio_connection = ""` precisa ser marcada com a tag `"parameters"`.
+
+**Passos para adicionar a tag no VS Code:**
+
+1. Abra o notebook `src_lnd_ibge_ipca_amplo.ipynb`.
+2. Localize a célula onde está `minio_connection = ""` (logo após as importações).
+3. Clique com o botão direito sobre essa célula e selecione **"Edit Cell Tags"**.
+4. Insira a seguinte tag:
+
+~~~json
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "7681ecd0",
+   "metadata": {
+   "tags": [
+  "parameters"
+ ]  
+   },
+   "outputs": [],
+   "source": [
+    "minio_connection = \"\""
+   ]
+  },
+~~~
+
+5. Salve o notebook.
+
+> Isso garante que o Airflow consiga injetar corretamente os parâmetros definidos no PapermillOperator ao executar o notebook.
+
+### 4. Testes e Validação no Airflow
+
+Com os ajustes feitos:
+
+- A pasta de logs criada manualmente.
+- A célula marcada com a tag `parameters`.
+
+Foi possível executar a DAG no Airflow com sucesso. O notebook é processado, os dados são salvos corretamente no MinIO, e o output do notebook é armazenado em:
+
+~~~bash
+/opt/airflow/logs/tasks/landing/
+~~~
