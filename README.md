@@ -206,11 +206,11 @@ Este procedimento validou a integração do Airflow com a infraestrutura de dado
 
 ## 15 Criação da DAG ibge_pme e Organização do Fluxo de Diretórios 
 
-Para estruturar o pipeline de ingestão e transformação dos dados da Pesquisa Mensal de Emprego (PME/IBGE), foi criada a DAG ibge_pme no Airflow, com execução agendada a cada 3 minutos (schedule="*/3 * * * *"). A DAG está localizada no caminho: 
+Para estruturar o pipeline de ingestão e transformação dos dados da Pesquisa Mensal de Emprego (PME/IBGE), foi criada a DAG ibge_ipca_amplo no Airflow, com execução agendada a cada 3 minutos (schedule="*/3 * * * *"). A DAG está localizada no caminho: 
 
 ~~~bash 
 
-/projeto-lakehouse/src/dags/ibge/pme/ibge_pme.py 
+/projeto-lakehouse/src/dags/ibge/ipca_amplo/ibge_pme.py 
 
 ~~~ 
 
@@ -224,24 +224,7 @@ Essa DAG executa um fluxo dividido nas seguintes camadas:
 
 Cada camada possui um notebook .ipynb responsável por sua respectiva etapa de processamento.  
 
-Estrutura de Diretórios e Arquivos:  
-Abaixo está a hierarquia de pastas utilizada para organizar os notebooks da DAG ibge_pme: 
-
-~~~bash 
-
-ibge/ 
-└── pme/ 
-    ├── ibge_pme.py                      
-    └── tasks/ 
-        ├── landing/ 
-        │   └── src_lnd_ibge_pme.ipynb     
-        ├── bronze/ 
-        │   └── lnd_brz_pme.ipynb          
-        └── silver/ 
-            └── brz_slv_pme.ipynb          
-
-~~~ 
-
+Vazias por enquanto.
 Cada notebook é executado por um PapermillOperator. 
 
 ### Lógica de Dependência entre Tarefas
@@ -258,7 +241,7 @@ Essa DAG utiliza notebooks que acessam o MinIO por meio da variável minio_conne
 
 ## 16 Detalhamento Técnico da Integração: Ingestão de Dados e Execução com Airflow
 
-Após a criação da DAG `ibge_pme` e a organização dos notebooks por camadas (Landing, Bronze, Silver), foram implementadas as seguintes etapas para viabilizar a ingestão de dados e execução das tarefas via Airflow:
+Após a criação da DAG `ibge_ipca_amplo` e a organização dos notebooks por camadas (Landing, Bronze, Silver), foram implementadas as seguintes etapas para viabilizar a ingestão de dados e execução das tarefas via Airflow:
 
 ### 1. Desenvolvimento do Processo de Ingestão de Dados
 
@@ -346,3 +329,35 @@ Foi possível executar a DAG no Airflow com sucesso. O notebook é processado, o
 ~~~bash
 /opt/airflow/logs/tasks/landing/
 ~~~
+
+Estrutura de Diretórios e Arquivos:  
+Abaixo está a hierarquia de pastas utilizada para organizar os notebooks da DAG ibge_pme: 
+
+~~~bash 
+
+ibge/
+└── ipca_amplo/
+    ├── ibge_ipca_amplo.py
+    ├── tasks/
+    │   ├── landing/
+    │   │   └── artifacts/
+    │   │       └── src_lnd_ibge_ipca_amplo.ipynb
+    │   ├── bronze/
+    │   │   └── lnd_brz_ipca_amplo.ipynb
+    │   └── silver/
+    │       └── brz_slv_ipca_amplo.ipynb
+    └── variables/
+        └── minio_connection.json
+~~~ 
+
+Cada notebook é executado por um PapermillOperator. 
+
+### 5. Automação da Coleta de Dados IBGE (API SIDRA)
+
+Antes, foi realizado um teste manual para a coleta dos dados, definindo períodos específicos e fazendo múltiplas requisições para obter todos os arquivos desejados, no entanto, devido a quantidade de arquivos essa prática é inviável, especialmente devido à limitação de volume de dados que podem ser requisitados por vez na API do IBGE.
+
+Para resolver esse problema, foi implementada uma automatização do processo de requisição, que agora gera de forma dinâmica todos os períodos do tipo YYYYMM desde janeiro de 2020 até a data atual. Com isso, a URL de consulta à API é montada automaticamente para cada período, garantindo que os dados sejam baixados de forma contínua, escalável e organizada. 
+
+Essa automatização foi feita apenas no parâmetro periodos, onde o mesmo foi colocado em outra celula e com o uso da biblioteca datetime foi criado essa requisição mês a mês. 
+
+Para garantir uma coleta estável e eficiente dos dados, foi adicionado um intervalo de 0.5 segundos entre cada requisição à API. Essa pausa tem dois objetivos principais: Evitar sobrecarga na API pública do IBGE e evitar sobrecarga no hardware local. 
