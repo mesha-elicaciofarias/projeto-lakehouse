@@ -210,7 +210,7 @@ Para estruturar o pipeline de ingestão e transformação dos dados da Pesquisa 
 
 ~~~bash 
 
-/projeto-lakehouse/src/dags/ibge/ipca_amplo/ibge_pme.py 
+/projeto-lakehouse/src/dags/ibge/ipca_amplo/ibge_ipca_amplo.py 
 
 ~~~ 
 
