@@ -95,6 +95,7 @@ Access Key: MINIO_ROOT_USER
 
 Key: MINIO_ROOT_PASSWORD  
 
+---
 Para a criação dos buckets, após o login, siga os passos abaixo que representam as camadas da arquitetura de medalhão: 
 
 No menu lateral esquerdo, clique em Administrator. 
@@ -192,6 +193,8 @@ Para resolver o erro de conexão da DAG `geography_coordinates` no Airflow, fora
 
 - Cliquei em **Add Variable** no canto superior direito. 
 
+---
+
 - Criei uma variável com: 
 
   - **Key:** `minio_connection.json` (nome do arquivo JSON localizado na pasta `variables` do projeto) 
@@ -243,6 +246,8 @@ Essa DAG utiliza notebooks que acessam o MinIO por meio da variável minio_conne
 
 Após a criação da DAG `ibge_ipca_amplo` e a organização dos notebooks por camadas (Landing, Bronze, Silver), foram implementadas as seguintes etapas para viabilizar a ingestão de dados e execução das tarefas via Airflow:
 
+---
+
 ### 1. Desenvolvimento do Processo de Ingestão de Dados
 
 Foi desenvolvido um fluxo de ingestão baseado no arquivo `ibge_ipca_amplo.py`. Nele, foi criada a função `ibge_ipca_amplo()` que realiza as seguintes ações:
@@ -251,6 +256,8 @@ Foi desenvolvido um fluxo de ingestão baseado no arquivo `ibge_ipca_amplo.py`. 
 - Cria a conexão com o **MinIO** utilizando as configurações passadas via variável `minio_connection`.
 - Define a lógica para ler os arquivos `.json` com **listas aninhadas**, desaninhá-las e transformar os dados em formato tabular.
 - Salva os dados tratados no Data Lake no formato de **tabela Delta**.
+
+---
 
 Essa etapa é executada por meio do notebook `src_lnd_ibge_ipca_amplo.ipynb`, que possui o seguinte fluxo:
 
@@ -361,3 +368,169 @@ Para resolver esse problema, foi implementada uma automatização do processo de
 Essa automatização foi feita apenas no parâmetro periodos, onde o mesmo foi colocado em outra celula e com o uso da biblioteca datetime foi criado essa requisição mês a mês. 
 
 Para garantir uma coleta estável e eficiente dos dados, foi adicionado um intervalo de 0.5 segundos entre cada requisição à API. Essa pausa tem dois objetivos principais: Evitar sobrecarga na API pública do IBGE e evitar sobrecarga no hardware local. 
+
+# 17 DAG: Levantamento de Preços ANP (Camada Landing)
+
+## Descrição do Projeto
+
+Este projeto automatiza a extração, download e armazenamento de arquivos públicos da Agência Nacional do Petróleo (ANP) contendo séries históricas do levantamento de preços de combustíveis no Brasil.
+
+Fonte dos Dados: 
+
+https://www.gov.br/anp/pt-br/assuntos/precos-e-defesa-da-concorrencia/precos/precos-revenda-e-de-distribuicao-combustiveis/informacoes-levantamento-de-precos-de-combustiveis
+
+A DAG (Directed Acyclic Graph) implementada foi desenvolvida para ser executada no Apache Airflow, fazendo a orquestração do processo de coleta dos dados, armazenamento no datalake (MinIO) e garantindo a organização dos dados na camada **landing**.
+
+---
+
+## Estrutura de Pastas e Arquivos
+
+src/dags/
+└── anp/serie_levantamento_precos/
+├── tasks/
+│ ├── bronze/
+│ │ └── lnd_brz_anp_serie_levantamento_precos.ipynb # Notebook para camada bronze
+│ └── landing/
+│ ├── artifacts/ # Pasta para artefatos gerados no processo (logs, dados auxiliares)
+│ ├── download/ # Pasta temporária onde arquivos baixados são armazenados localmente
+│ └── src_lnd_anp_serie_levantamento_precos.ipynb # Notebook principal que executa a extração, download e upload para MinIO
+├── variables/
+│ └── minio_connection.json # Arquivo com credenciais de acesso ao MinIO
+└── anp_serie_levantamento_precos.py # Script Python para execução da DAG no Airflow
+
+
+### 1. Extração de URLs de arquivos
+
+A DAG inicia acessando a página pública da ANP onde estão disponíveis os arquivos de séries históricas de preços.
+
+Utilizamos um crawler simples implementado com a biblioteca **BeautifulSoup** para fazer o parsing da página HTML e extrair os links que contêm arquivos `.xls`, `.xlsx` e `.zip` que contenham no nome a palavra "mensal, só foram encontrados arquivos '.xlsx'.
+
+Isso garante que apenas arquivos relevantes para o levantamento mensal sejam coletados.
+
+### 2. Download dos arquivos
+
+Com a lista de URLs em mãos, a DAG baixa os arquivos para uma pasta local temporária chamada `download`.
+
+Cada arquivo é salvo localmente com seu nome original.
+
+Durante o download, metadados são coletados, como nome do arquivo, link de origem, caminho local e data/hora do download.
+
+Há um pequeno delay entre downloads para evitar sobrecarga no servidor da ANP.
+
+### 3. Upload para o datalake (MinIO)
+
+Após o download, os arquivos são enviados para o bucket `landing` dentro do datalake MinIO.
+
+O caminho dentro do bucket segue o prefixo `anp/serie_levantamento_precos/` para organização.
+
+O MinIO é uma solução de armazenamento compatível com S3 que permite armazenar os arquivos de forma segura e acessível para processos posteriores.
+
+O upload é realizado via SDK MinIO em Python, utilizando as credenciais armazenadas em `variables/minio_connection.json`.
+
+### 4. Limpeza
+
+Depois que os arquivos são carregados no datalake, os arquivos temporários locais na pasta `download` são excluídos para economizar espaço.
+
+---
+
+## Motivação do Fluxo
+
+- **Automação:** Garante que a coleta dos dados da ANP seja feita automaticamente e regularmente.  
+- **Organização:** Arquivos são versionados e organizados em um datalake, facilitando o acesso e futuras etapas de processamento.  
+- **Reprodutibilidade:** A DAG pode ser agendada e reexecutada pelo Airflow, mantendo o pipeline confiável e rastreável.  
+- **Manutenção facilitada:** O código está organizado em notebooks e scripts para fácil manutenção e evolução.
+
+---
+
+## 18 Conversão de arquivos .xlsx da camada Landing para Bronze(formato Delta)
+
+- Este pipeline tem como objetivo processar os arquivos `.xlsx` provenientes da camada **Landing**, realizar transformações padronizadas nos dados e armazená-los na camada **Bronze** no formato Delta Lake. Essa etapa é crucial para garantir a persistência confiável, leitura otimizada e versionamento dos dados brutos já padronizados, preservando sua integridade para uso nas próximas camadas (Silver e Gold).
+
+---
+### Estrutura de Entrada
+
+Os arquivos de entrada estão localizados no diretório:
+
+Origem (Landing): Arquivos .xlsx no bucket 
+s3a://landing/anp/serie_levantamento_precos/
+
+### Etapas do processo
+
+- Inicialização da SparkSession com suporte a Excel
+- Listagem dos arquivos da camada Landing
+
+---
+### Etapas Realizadas no Pipeline
+
+1. Listagem dos Arquivos Fonte
+
+- Função: listar_arquivos_xlsx()
+
+- Descrição: Conecta-se ao bucket S3 Landing, filtra arquivos com extensão .xlsx usando o prefixo anp/serie_levantamento_precos/.
+
+- Finalidade: Automatiza a detecção dos arquivos que devem ser processados.
+
+2. Leitura dos Arquivos Excel com Layout Específico
+
+- Função: ler_arquivos_anp()
+
+- Descrição:
+
+- Os arquivos possuem o cabeçalho a partir da linha de índice 11, por isso usamos o parâmetro header=11.
+
+- Existem rodapés não estruturados que são ignorados com skipfooter=12.
+
+- Algumas colunas extras sem nome são eliminadas com df.dropna(axis=1, how='all').
+
+- A leitura é feita via pandas.read_excel() a partir do binário do objeto S3.
+
+-Biblioteca usada:
+
+io: para manipular os binários dos arquivos no formato BytesIO.
+
+3. Conversão de DataFrame Pandas para Spark
+
+Feita com:
+
+df_spark = spark.createDataFrame(df_pandas)
+
+Necessária para que os dados possam ser processados em escala distribuída e salvos como Delta.
+
+4. Padronização dos Nomes das Colunas
+
+- Função: limpar_nome_colunas_spark()
+
+- O que faz:
+
+- Remove acentos das colunas usando unicodedata.normalize().
+
+- Substitui caracteres inválidos por - usando re.sub().
+
+- Converte todos os nomes para minúsculo.
+
+- Evita múltiplos underscores consecutivos.
+
+- Bibliotecas usadas:
+
+unicodedata: remove acentos (ex: "Preço" → "Preco").
+
+re: expressões regulares, ou seja, são sequências de caracteres que formam um padrão.
+
+5. Enriquecimento do DataFrame com Metadados
+
+- Função: salvar_como_delta()
+
+- Colunas adicionadas:
+
+_carga_data: marcação de data/hora da carga (current_timestamp()).
+
+_arquivo_origem: nome original do arquivo .xlsx, com lit(nome_arquivo).
+
+### Estrutura de saída:
+
+Os arquivos de saída estão localizados no diretório:
+
+Destino (Bronze): Tabelas Delta salvas em 
+s3a://bronze/anp/precos-combustiveis/
+
+---
