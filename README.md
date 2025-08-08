@@ -534,3 +534,104 @@ Destino (Bronze): Tabelas Delta salvas em
 s3a://bronze/anp/precos-combustiveis/
 
 ---
+
+## 19 DAG: Cadastro Nacional de Obras (CNO)
+
+Este pipeline foi desenvolvido para automatizar o processo de ingestão, transformação e armazenamento de dados do **Cadastro Nacional de Obras (CNO)** disponibilizado pela Receita Federal, seguindo a arquitetura de dados em camadas (Landing → Bronze → Silver).
+
+---
+
+### **1. Criação da DAG e Estrutura de Pastas**
+
+Inicialmente, foi criada a **DAG `cno`** no Apache Airflow para orquestrar todo o fluxo de ingestão e transformação.  
+A seguir, foi definida a estrutura de diretórios e arquivos dentro do repositório, organizada por camadas (`landing`, `bronze`), além de pastas para scripts (`tasks`), variáveis e artefatos.
+
+---
+
+### **2. Conexão com o MinIO**
+
+O MinIO foi utilizado como **Data Lake** local para armazenamento dos arquivos.  
+A configuração de acesso ao MinIO foi centralizada em um arquivo `minio_connection.json`, contendo:
+
+- **endpoint** do servidor MinIO (com suporte a HTTP/HTTPS);
+- **access_key** e **key** para autenticação;
+- Nome padrão do bucket de destino.
+
+Essas informações são lidas e utilizadas para instanciar o cliente MinIO (`s3_client`) no código Python, garantindo uma conexão segura e reutilizável em todo o pipeline.
+
+---
+
+### **3. Ingestão de Dados — Camada Landing**
+
+Nesta etapa, foi implementada a função `baixar_e_subir_zip_para_minio` para automatizar o processo de ingestão:
+
+1. **Download do arquivo ZIP**  
+   - A função acessa a URL oficial da Receita Federal:  
+     ```
+     https://arquivos.receitafederal.gov.br/dados/cno/cno.zip
+     ```
+   - Faz o download completo do arquivo para a memória usando `requests`.
+
+2. **Leitura e Extração dos arquivos internos**  
+   - O conteúdo do `.zip` é carregado em memória via `io.BytesIO` (sem necessidade de salvar localmente).
+   - O módulo `zipfile` é usado para iterar sobre todos os arquivos contidos no ZIP.
+
+3. **Upload para o MinIO (Camada Landing)**  
+   - Cada arquivo extraído é enviado individualmente para o bucket `landing`, preservando o nome original.  
+   - A estrutura de destino segue o padrão:
+     ```
+     landing/cno/cno/<nome_do_arquivo>.csv
+     ```
+   - O método `s3_client.put_object` é utilizado para realizar o upload diretamente da memória para o MinIO.
+
+4. **Log e Monitoramento**  
+   - O processo é registrado com `logging.info` para acompanhar o progresso, arquivos processados e eventuais erros.
+
+> **Resultado**: todos os arquivos CSV originais do CNO ficam disponíveis na **camada landing** do Data Lake, prontos para serem tratados.
+
+---
+
+## 20 Processamento e Transformação — Camada Bronze
+
+Após a ingestão, cada arquivo CSV da camada landing passa por padronização e é convertido para o formato **Delta Lake**.
+
+O processamento de cada arquivo foi feito em **notebooks separados**, um para cada tipo de dado do CNO, por exemplo:
+- `cno_cnaes`
+- `cno_totais`
+- `cno_vinculos`
+- etc.
+
+### Etapas de transformação:
+
+1. **Leitura do arquivo CSV**  
+   - Utiliza o Spark para ler o arquivo diretamente do MinIO via `s3a://`, preservando o cabeçalho (`header=True`) e definindo a codificação correta (`ISO-8859-1` ou `latin1`).
+
+2. **Padronização dos nomes das colunas**  
+   - Função `remover_acentos`: remove todos os acentos, mantendo a letra original.  
+   - Função `padronizar_nome_coluna`:  
+     - Remove acentos  
+     - Converte para minúsculas  
+     - Remove caracteres especiais  
+     - Substitui espaços por `_`
+   - Função `padronizar_colunas`: aplica o processo acima em todas as colunas do DataFrame.
+
+3. **Escrita em formato Delta Lake**  
+   - Os dados transformados são gravados na camada bronze usando:
+     ```python
+     df.write.format("delta")
+       .mode("overwrite")
+       .option("overwriteSchema", "true")
+       .save(output_path)
+     ```
+   - O caminho de destino segue o padrão:
+     ```
+     bronze/cno/cno/<nome_tabela>_delta/
+     ```
+
+4. **Validação**  
+   - Contagem de linhas (`df.count()`) para garantir que os dados foram carregados corretamente.  
+   - Visualização de amostra (`df.show(20, truncate=False)`) para inspeção.
+
+> **Resultado**: arquivos CSV brutos da camada landing são transformados em tabelas Delta na camada bronze, com colunas padronizadas e dados prontos para serem refinados na camada silver.
+
+---
