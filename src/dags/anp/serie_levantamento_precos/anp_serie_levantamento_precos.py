@@ -23,17 +23,16 @@ def anp_serie_levantamento_precos():
         parameters={"minio_connection": Variable.get("minio_connection")}
     )
 
-    # bronze = PapermillOperator(
-    #     task_id="bronze_anp_serie_levantamento_precos",
-    #     input_nb=os.path.join(
-    #         os.path.dirname(os.path.realpath(__file__)), "tasks", "bronze","lnd_brz_anp_serie_levantamento_precos.ipynb"
-    #     ),
-    #     output_nb="/opt/airflow/logs/tasks/bronze/lnd_brz_anp_serie_levantamento_precos_{{ ts_nodash }}.ipynb",
-    #     parameters={"minio_connection": Variable.get("minio_connection")}
-    # )
+    bronze = PapermillOperator(
+        task_id="bronze_anp_serie_levantamento_precos",
+        input_nb=os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), "tasks", "bronze","lnd_brz_anp_serie_levantamento_precos.ipynb"
+        ),
+        output_nb="/opt/airflow/logs/tasks/bronze/lnd_brz_anp_serie_levantamento_precos_{{ ts_nodash }}.ipynb",
+        parameters={"minio_connection": Variable.get("minio_connection")}
+    )
 
 
-    landing 
-    # >> bronze
+    landing >> bronze
 
 anp_serie_levantamento_precos()
