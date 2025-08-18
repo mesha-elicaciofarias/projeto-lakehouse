@@ -537,7 +537,7 @@ s3a://bronze/anp/precos-combustiveis/
 
 ## 19 DAG: Cadastro Nacional de Obras (CNO)
 
-Este pipeline foi desenvolvido para automatizar o processo de ingestão, transformação e armazenamento de dados do **Cadastro Nacional de Obras (CNO)** disponibilizado pela Receita Federal, seguindo a arquitetura de dados em camadas (Landing → Bronze → Silver).
+Este pipeline foi desenvolvido para automatizar o processo de ingestão, transformação e armazenamento de dados do **Cadastro Nacional de Obras (CNO)** disponibilizado pela Receita Federal, seguindo a arquitetura de dados em camadas (Landing → Bronze).
 
 ---
 
@@ -633,5 +633,54 @@ O processamento de cada arquivo foi feito em **notebooks separados**, um para ca
    - Visualização de amostra (`df.show(20, truncate=False)`) para inspeção.
 
 > **Resultado**: arquivos CSV brutos da camada landing são transformados em tabelas Delta na camada bronze, com colunas padronizadas e dados prontos para serem refinados na camada silver.
+
+---
+
+## 21 DAG: Cadastro Nacional de Pessoa Juridica (CNPJ)
+
+Este pipeline foi desenvolvido para automatizar o processo de ingestão, transformação e armazenamento de dados do **Cadastro Nacional de Obras (CNPJ)** disponibilizado pela Receita Federal, seguindo a arquitetura de dados em camadas (Landing → Bronze).
+
+---
+
+Dentro da DAG tem 10 tasks:
+
+    rbf_cnpj_cnaes; 
+    rbf_cnpj_empresas; 
+    rbf_cnpj_estabelecimentos; 
+    rbf_cnpj_motivos; 
+    rbf_cnpj_municipios
+    rbf_cnpj_naturezas; 
+    rbf_cnpj_paises; 
+    rbf_cnpj_qualificacoes; 
+    rbf_cnpj_simples; 
+    rbf_cnpj_socios
+
+### Etapas do pipeline (camada landing)
+
+1. **Listagem de diretórios existentes**  
+   - Consulta o site da Receita Federal para identificar quais diretórios no formato `YYYY-MM` estão disponíveis, garantindo que apenas meses com arquivos publicados sejam processados.
+
+2. **Download dos arquivos**  
+   - Realizado de forma assíncrona usando `aiohttp` e um limite de concorrência (`asyncio.Semaphore`) para não sobrecarregar o servidor.  
+   - Valida status HTTP, tipo de conteúdo e tamanho do arquivo antes de salvar. 
+   - Tentativas de download são repetidas até 3 vezes em caso de falha.
+
+3. **Extração dos arquivos ZIP**  
+   - Cada arquivo baixado é extraído na pasta `download/` localmente.  
+   - Erros de arquivos corrompidos são registrados no log.
+
+4. **Filtragem e leitura dos arquivos CNAE**  
+   - Apenas arquivos com nomes correspondentes a task que está executada são processados.  
+   - Cada CSV é lido usando `pandas` (`sep=";"`, `encoding="latin1"`, `low_memory=False`) e consolidado em um único `DataFrame`.
+
+5. **Upload para o MinIO (datalake)**  
+   - Os arquivos CSV consolidados são enviados para o bucket `landing` do MinIO, na estrutura `rfb/cnpj_task_correspondente/`.  
+   - Mantém o caminho relativo para facilitar rastreabilidade.
+
+- A pasta `download/` é criada automaticamente se não existir.
+- Todo o processo é registrado em logs, permitindo monitoramento.
+- Ao final do envio para o data lake a pasta `download/` é excluída automaticamente.
+- a DAG do Airflow que dispara esses pipelines já está configurada para execussão.
+- Vale ressaltar que no processo de criação das pastas, dentro da camada landing é preciso ter a pasta variavéis com o arquivo minio.json dentro com as configurações de endpoint;  access_key e key para a conexão com o minio.
 
 ---
