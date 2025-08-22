@@ -685,7 +685,7 @@ Dentro da DAG tem 10 tasks:
 
 ---
 
-## 21 Processamento dos arquivos da camada landing para bronze
+## 22 Processamento dos arquivos da camada landing para bronze
 
 O objetivo do código foi:
 
