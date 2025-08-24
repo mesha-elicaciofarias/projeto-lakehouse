@@ -1,10 +1,8 @@
 import os
+
 import pendulum
-
-from airflow.sdk import dag
-
 from airflow.providers.papermill.operators.papermill import PapermillOperator
-from airflow.sdk import Variable
+from airflow.sdk import Variable, dag
 
 
 @dag(
@@ -255,7 +253,6 @@ def rfb_cnpj():
         output_nb="/opt/airflow/logs/tasks/bronze/lnd_brz_rfb_cnpj_socios_{{ ts_nodash }}.ipynb",
         parameters={"minio_connection": Variable.get("minio_connection")}
     )
-
 
     landing_rfb_cnpj_cnaes.set_downstream(bronze_rfb_cnpj_cnaes)
     landing_rfb_cnpj_empresas.set_downstream(bronze_rfb_cnpj_empresas)

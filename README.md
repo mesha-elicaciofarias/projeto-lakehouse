@@ -744,3 +744,77 @@ O objetivo do código foi:
 - Todas as tasks configuradas seguindo o fluxo de dados da camada landing para a bronze.
 
 ---
+=======
+## 23 Pipeline de Ingestão - Regime Tributário (RFB)
+
+Este script tem como objetivo automatizar o **download, extração, upload para o MinIO** dos arquivos da Receita Federal referentes ao regime tributário de entidades.
+
+- Os arquivos são:
+1. Imunes e Isentas;
+2. Lucro Arbitrado;
+3. Lucro Presumido;
+4. Lucro Real
+
+---
+
+## 📌 Etapas do Processo
+
+### 1. Definição de parâmetros
+- Define a **URL base** dos arquivos da Receita Federal.
+- Especifica o **bucket** no MinIO onde os arquivos serão armazenados.
+- Lista os **arquivos ZIP** que devem ser baixados.
+
+---
+
+### 2. Preparação da pasta de staging
+- Cria a pasta `download/`, que serve como área temporária para armazenar os arquivos baixados.
+
+---
+
+### 3. Função de download e extração
+A função `download_and_extract`:
+1. Faz o **download** do arquivo ZIP com múltiplas tentativas em caso de falha (até 3).
+2. Verifica se:
+   - O **status da resposta** é `200 OK`.
+   - O **tipo do conteúdo** é realmente um `.zip`.
+   - O **tamanho do arquivo** é válido.
+3. Salva o arquivo na pasta `download/`.
+4. Realiza a **extração** do conteúdo do ZIP (arquivos `.csv`).
+5. Registra logs para acompanhar sucesso ou erros.
+
+---
+
+### 4. Upload para o MinIO
+- Localiza todos os arquivos `.csv` extraídos na pasta `download/`.
+- Para cada arquivo:
+  - Define o **caminho relativo** dentro do bucket MinIO.
+  - Faz o **upload** para o bucket `landing`, no caminho:
+    ```
+    rfb/regime_tributario/imunes_isentas/<arquivo.csv>
+    ```
+
+---
+
+### 5. Limpeza pós-processamento
+- Após o upload, remove a pasta `download/` e todos os arquivos temporários.
+- Caso a pasta não exista ou ocorra erro na remoção, o log registra o ocorrido.
+
+---
+
+## ⚙️ Principais Bibliotecas Utilizadas
+- **requests** → Download dos arquivos da Receita Federal.  
+- **zipfile** → Extração dos arquivos ZIP.  
+- **pathlib** → Manipulação de caminhos de diretórios.  
+- **minio** → Upload dos arquivos processados para o MinIO.  
+- **shutil** → Limpeza da pasta temporária.  
+- **logging** → Registro de logs para monitoramento do processo.  
+
+---
+
+## 📂 Fluxo Resumido
+1. Baixar arquivo ZIP da Receita Federal.  
+2. Validar e extrair os arquivos CSV.  
+3. Enviar os arquivos para o MinIO.  
+4. Limpar a pasta de staging.  
+
+---

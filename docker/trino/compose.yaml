@@ -1,0 +1,23 @@
+name: trino
+
+services:
+  trino-coordinator:
+    image: 'trinodb/trino:latest'
+    container_name: trino-coordinator
+    hostname: trino-coordinator
+    networks:
+      - projeto-lakehouse
+    ports:
+      - mode: ingress
+        target: 9090
+        published: "9090"
+        protocol: "tcp"
+    volumes:
+      - ./etc/trino:/etc/trino
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+networks:
+  projeto-lakehouse:
+    name: projeto-lakehouse
+    external: true
