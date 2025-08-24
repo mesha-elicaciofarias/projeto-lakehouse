@@ -685,6 +685,66 @@ Dentro da DAG tem 10 tasks:
 
 ---
 
+## 22 Processamento dos arquivos da camada landing para bronze
+
+O objetivo do código foi:
+
+- Criar um notebook para task;
+- Processar as informações e salvar em pastas por tipo, assim como foi feito da camada landing.
+
+### 1. Funções de limpeza de texto
+- **`remover_acentos`**:  
+  - Separa acentos das letras usando `unicodedata.normalize`.
+  - Remove os caracteres da categoria `Mn` (marca de acentuação).
+  - Resultado: transforma `"João"` em `"Joao"`.
+
+  - **`limpar_texto`**:  
+  - Faz o mesmo processo de remoção de acentos.
+  - Converte tudo para **minúsculo**.
+  - Remove espaços extras no início e fim.
+  - Remove aspas `"` da string.  
+  - Exemplo: `" João "` → `"joao"`.
+
+  ### 2. Leitura do arquivo CSV
+- O Spark lê o arquivo usando as opções:
+  - `delimiter=";"` → separador ponto e vírgula.
+  - `encoding="ISO-8859-1"` → garante leitura de caracteres especiais.
+  - `header="false"` → o arquivo não possui cabeçalho.
+
+- Em seguida, as colunas recebem nomes corretos:
+  - `cnpj_basico`
+  - `opcao_pelo_simples`
+
+ - As colunas estavam sem titulos foi preciso inserir todas seguindo o [Dicionário de Dados do Cadastro Nacional da Pessoa Jurídica](https://www.gov.br/receitafederal/dados/cnpj-metadados.pdf)
+
+### 3. Padronização do texto
+- Uma **UDF (User Defined Function)** chamada `limpar_texto_udf` aplica a função `limpar_texto` em todas as colunas do tipo **string** do DataFrame.
+- Isso garante que todos os textos fiquem:
+  - Sem acentos  
+  - Em minúsculas  
+  - Sem aspas  
+  - Sem espaços desnecessários 
+
+### 4. Escrita no Delta Lake
+- O DataFrame final é salvo na **camada Bronze** no formato Delta:
+  - `mode("overwrite")` → sobrescreve os dados antigos.
+  - `option("overwriteSchema", "true")` → atualiza o esquema se necessário.
+
+### 5. Logs e verificação
+- Mensagens de log informam cada etapa do processo:
+  - Arquivo lido com sucesso.
+  - Colunas renomeadas corretamente.
+  - Textos padronizados.
+  - Arquivo salvo no caminho definido.
+- No final, é feita a contagem de linhas (`df.count()`) para confirmar a quantidade de registros carregados.
+
+### 6. Configuração da DAG
+
+- O arquivo rfb_cnpj foi configurado para que o Airflow funcione corretamente.
+- Todas as tasks configuradas seguindo o fluxo de dados da camada landing para a bronze.
+
+---
+=======
 ## 23 Pipeline de Ingestão - Regime Tributário (RFB)
 
 Este script tem como objetivo automatizar o **download, extração, upload para o MinIO** dos arquivos da Receita Federal referentes ao regime tributário de entidades.
