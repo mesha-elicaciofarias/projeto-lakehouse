@@ -1,0 +1,68 @@
+name: hive-metastore
+
+services:
+  # PostgreSQL database for Hive Metastore
+  hive-metastore-db:
+    image: postgres:17
+    container_name: hive-metastore-db
+    hostname: hive-metastore-db
+    environment:
+      POSTGRES_DB: hive_metastore_db
+      POSTGRES_USER: hiveuser
+      POSTGRES_PASSWORD: hivepassword
+    # volumes:
+    #   - postgres_data:/var/lib/postgresql/data
+    networks:
+      - projeto-lakehouse
+    ports:
+      - mode: ingress
+        target: 5432
+        published: "5433"
+        protocol: tcp
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U hiveuser -d hive_metastore_db
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # Hive Metastore service
+  hive-metastore-server:
+    # image: apache/hive:4.0.0 # Use a suitable Hive version
+    image: apache/hive:standalone-metastore-4.1.0  # Use a suitable Hive version
+    # command: /opt/hive/bin/schematool -dbType postgres -initSchema || /opt/hive/bin/hms --verbose
+    container_name: hive-metastore-server
+    hostname: hive-metastore-server
+    environment:
+      SERVICE_NAME: metastore
+      DB_DRIVER: postgres
+
+    networks:
+      - projeto-lakehouse
+    ports:
+      - mode: ingress
+        target: 9083
+        published: "9083"
+        protocol: tcp
+    depends_on:
+      hive-metastore-db:
+        condition: service_healthy
+        required: true
+    volumes:
+      # - ./jars/bundle-2.32.25.jar:/opt/hive/lib/bundle-2.32.25.jar
+      # - ./jars/hadoop-aws-3.4.0.jar:/opt/hive/lib/hadoop-aws-3.4.0.jar
+      - ./jars/postgresql-42.7.7.jar:/opt/hive/lib/postgresql-42.7.7.jar
+      - ./conf/metastore-site.xml:/opt/hive/conf/metastore-site.xml
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+networks:
+  projeto-lakehouse:
+    name: projeto-lakehouse
+    external: true
+
+# volumes:
+#   postgres_data:
