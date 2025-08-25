@@ -30,3 +30,7 @@ src/dags/**/variables/*.json
 src/dags/anp/serie_levantamento_precos/tasks/landing/dados.ods
 src/dags/anp/serie_levantamento_precos/tasks/landing/download
 .vscode/
+
+# arquivos jars
+
+docker/hive/jars/*.jar
