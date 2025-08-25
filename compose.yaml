@@ -1,3 +1,5 @@
 include:
   - docker/minio/compose.yaml
   - docker/airflow/compose.yaml
+  - docker/hive/compose.yaml
+  - docker/trino/compose.yaml
