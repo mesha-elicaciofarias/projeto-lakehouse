@@ -1,29 +1,25 @@
 name: minio
 
 x-minio-common: &minio-common
-  image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z
-  command: server --address ":10000" --console-address ":10001" http://minio{1...4}/data{1...2}
-  # deploy:
-  #   resources:
-  #     limits:
-  #       cpus: "2"
-  #       memory: "4G"
-  #     reservations:
-  #       cpus: "1"
-  #       memory: "3G"
+  # image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z
+  image: quay.io/minio/minio
+  command: server --address ":9000" --console-address ":9001" http://minio{1...4}/data{1...2}
   expose:
-    - "10000"
-    - "10001"
+    - "9000"
+    - "9001"
   environment:
     MINIO_ROOT_USER: ${MINIO_ROOT_USER}
     MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
   healthcheck:
-    test: ["CMD", "mc", "ready", "local"]
+    test: 
+      - CMD-SHELL
+      - mc ready local
     interval: 5s
     timeout: 5s
     retries: 5
   networks:
     - projeto-lakehouse
+  restart: always
 
 services:
   minio1:
@@ -62,26 +58,41 @@ services:
     image: nginx:1.19.2-alpine
     container_name: nginx
     hostname: nginx
+    healthcheck:
+      test: curl --fail http://localhost/health || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     volumes:
       - ./nginx/etc/nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
-      - "10000:10000"
-      - "10001:10001"
+      - mode: ingress
+        target: 9000
+        published: "10000"
+        protocol: tcp
+      - mode: ingress
+        target: 9001
+        published: "10001"
+        protocol: tcp
     depends_on:
-      - minio1
-      - minio2
-      - minio3
-      - minio4
-    deploy:
-      resources:
-        limits:
-          cpus: "2"
-          memory: "4G"
-        reservations:
-          cpus: "1"
-          memory: "3G"
+      minio1:
+        condition: service_healthy
+        required: true
+      minio2:
+        condition: service_healthy
+        required: true
+      minio3:
+        condition: service_healthy
+        required: true
+      minio4:
+        condition: service_healthy
+        required: true
     networks:
       - projeto-lakehouse
+    extra_hosts:
+    - "host.docker.internal:host-gateway"
+    restart: always
 
 networks:
   projeto-lakehouse:
