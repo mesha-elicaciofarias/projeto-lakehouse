@@ -1,7 +1,7 @@
 <configuration>
     <property>
         <name>metastore.thrift.uris</name>
-        <value>thrift://host.docker.internal:9083</value>
+        <value>thrift://hive-metastore-server:9083</value>
         <description>Thrift URI for the remote metastore. Used by metastore client to connect to remote metastore.</description>
     </property>
     <property>
@@ -35,24 +35,24 @@
     </property>
     <property>
         <name>javax.jdo.option.ConnectionURL</name>
-        <value>jdbc:postgresql://host.docker.internal:5433/hive_metastore_db</value>
+        <value>jdbc:postgresql://hive-metastore-db:5432/hive_metastore</value>
     </property>
     <property>
         <name>javax.jdo.option.ConnectionUserName</name>
-        <value>hiveuser</value>
+        <value>5bf1f2f4b72a5719</value>
     </property>
     <property>
         <name>javax.jdo.option.ConnectionPassword</name>
-        <value>hivepassword</value>
+        <value>SlPMjiS7zq4UxJ7yruJlLK4CwNhAwQiY6pvrs8W2mio=</value>
     </property>
     <!--  -->
     <property>
         <name>fs.s3a.access.key</name>
-        <value>31aa474f9f2509cf</value>
+        <value>9a5edc7df42cfd71</value>
     </property>
     <property>
         <name>fs.s3a.secret.key</name>
-        <value>nIYfEB7Vjvly5sfH2JU6WJGrinawA+hHSoHlyinEe74=</value>
+        <value>DW4CyCit2CGO9gXyRtqQ7Lj6ZzQZm3xfS33ItBQpVbc=</value>
     </property>
     <property>
         <name>fs.s3a.endpoint</name>
