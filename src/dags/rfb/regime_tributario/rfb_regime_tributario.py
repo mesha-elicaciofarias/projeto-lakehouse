@@ -13,55 +13,105 @@ from airflow.sdk import Variable
     catchup=False,
     tags=["pyspark", "delta", "minio"],
 )
-def rbf_regime_tributario():
+def rfb_regime_tributario():
 
-    landing_rbf_regime_tributario_imunes_isentas = PapermillOperator(
-        task_id="landing_rbf_regime_tributario_imunes_isentas",
+    landing_rfb_regime_tributario_imunes_isentas = PapermillOperator(
+        task_id="src_lnd_rfb_regime_tributario_imunes_isentas",
         input_nb=os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
             "tasks", 
             "landing", 
-            "src_lnd_rbf_regime_tributario_imunes_isentas.ipynb",
+            "src_lnd_rfb_regime_tributario_imunes_isentas.ipynb",
         ),
-        output_nb="/opt/airflow/logs/tasks/landing/src_lnd_rbf_regime_tributario_imunes_isentas_{{ ts_nodash }}.ipynb",
+        output_nb="/opt/airflow/logs/tasks/landing/src_lnd_rfb_regime_tributario_imunes_isentas_{{ ts_nodash }}.ipynb",
         parameters={"minio_connection": Variable.get("minio_connection")}
     )
 
 
-    landing_rbf_regime_tributario_lucro_arbitrado = PapermillOperator(
+    landing_rfb_regime_tributario_lucro_arbitrado = PapermillOperator(
+        task_id="src_lnd_rfb_regime_tributario_lucro_arbitrado",
+        input_nb=os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            "tasks", 
+            "landing", 
+            "src_lnd_rfb_regime_tributario_lucro_arbitrado",
+        ),
+        output_nb="/opt/airflow/logs/tasks/landing/src_lnd_rfb_regime_tributario_lucro_arbitrado_{{ ts_nodash }}.ipynb",
+        parameters={"minio_connection": Variable.get("minio_connection")}
+    )
+
+    landing_rfb_regime_tributario_lucro_presumido = PapermillOperator(
+        task_id="src_lnd_rfb_regime_tributario_lucro_presumido",
+        input_nb=os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            "tasks", 
+            "landing", 
+            "src_lnd_rfb_regime_tributario_lucro_presumido.ipynb",
+        ),
+        output_nb="/opt/airflow/logs/tasks/landing/src_lnd_rfb_regime_tributario_lucro_presumido_{{ ts_nodash }}.ipynb",
+        parameters={"minio_connection": Variable.get("minio_connection")}
+    )
+
+
+    landing_rfb_regime_tributario_lucro_real = PapermillOperator(
+        task_id="src_lnd_rfb_regime_tributario_lucro_real",
+        input_nb=os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            "tasks", 
+            "landing", 
+            "src_lnd_rfb_regime_tributario_lucro_real.ipynb",
+        ),
+        output_nb="/opt/airflow/logs/tasks/landing/src_lnd_rfb_regime_tributario_lucro_real_{{ ts_nodash }}.ipynb",
+        parameters={"minio_connection": Variable.get("minio_connection")}
+    )
+
+    bronze_rfb_regime_tributario_imunes_isentas = PapermillOperator(
+        task_id="lnd_brz_rfb_regime_tributario_imunes_isentas",
+        input_nb=os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            "tasks", 
+            "landing", 
+            "lnd_brz_rfb_regime_tributario_imunes_isentas.ipynb",
+        ),
+        output_nb="/opt/airflow/logs/tasks/landing/lnd_brz_rfb_regime_tributario_imunes_isentas_{{ ts_nodash }}.ipynb",
+        parameters={"minio_connection": Variable.get("minio_connection")}
+    )
+
+
+    bronze_rbf_regime_tributario_lucro_arbitrado = PapermillOperator(
         task_id="landing_rbf_regime_tributario_lucro_arbitrado",
         input_nb=os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
             "tasks", 
             "landing", 
-            "src_lnd_rbf_cnpj_regime_tributario_lucro_arbitrado",
+            "landing_rbf_regime_tributario_lucro_arbitrado",
         ),
-        output_nb="/opt/airflow/logs/tasks/landing/src_lnd_rbf_regime_tributario_lucro_arbitrado_{{ ts_nodash }}.ipynb",
+        output_nb="/opt/airflow/logs/tasks/landing/landing_rbf_regime_tributario_lucro_arbitrado_{{ ts_nodash }}.ipynb",
         parameters={"minio_connection": Variable.get("minio_connection")}
     )
 
-    landing_rbf_regime_tributario_lucro_presumido = PapermillOperator(
+    bronze_rbf_regime_tributario_lucro_presumido = PapermillOperator(
         task_id="landing_rbf_regime_tributario_lucro_presumido",
         input_nb=os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
             "tasks", 
             "landing", 
-            "src_lnd_rbf_regime_tributario_lucro_presumido.ipynb",
+            "lnd_brz_rfb_regime_tributario_lucro_presumido.ipynb",
         ),
-        output_nb="/opt/airflow/logs/tasks/landing/src_lnd_rbf_regime_tributario_lucro_presumido_{{ ts_nodash }}.ipynb",
+        output_nb="/opt/airflow/logs/tasks/landing/lnd_brz_rfb_regime_tributario_lucro_presumido_{{ ts_nodash }}.ipynb",
         parameters={"minio_connection": Variable.get("minio_connection")}
     )
 
 
-    landing_rbf_regime_tributario_lucro_real = PapermillOperator(
+    bronze_rbf_regime_tributario_lucro_real = PapermillOperator(
         task_id="landing_rbf_regime_tributario_lucro_real",
         input_nb=os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
             "tasks", 
             "landing", 
-            "src_lnd_rbf_regime_tributario_lucro_real.ipynb",
+            "lnd_brz_rfb_regime_tributario_lucro_real.ipynb",
         ),
-        output_nb="/opt/airflow/logs/tasks/landing/src_lnd_rbf_regime_tributario_lucro_real_{{ ts_nodash }}.ipynb",
+        output_nb="/opt/airflow/logs/tasks/landing/lnd_brz_rfb_regime_tributario_lucro_real_{{ ts_nodash }}.ipynb",
         parameters={"minio_connection": Variable.get("minio_connection")}
     )
 
@@ -69,9 +119,10 @@ def rbf_regime_tributario():
 
 
 
-    landing_rbf_regime_tributario_imunes_isentas.set_downstream(landing_rbf_regime_tributario_lucro_arbitrado)
-    landing_rbf_regime_tributario_lucro_arbitrado.set_downstream(landing_rbf_regime_tributario_lucro_presumido)
-    landing_rbf_regime_tributario_lucro_presumido.set_downstream(landing_rbf_regime_tributario_lucro_real)
+    landing_rfb_regime_tributario_imunes_isentas.set_downstream(bronze_rfb_regime_tributario_imunes_isentas)
+    landing_rfb_regime_tributario_lucro_arbitrado.set_downstream(bronze_rbf_regime_tributario_lucro_arbitrado)
+    landing_rfb_regime_tributario_lucro_presumido.set_downstream(bronze_rbf_regime_tributario_lucro_presumido)
+    landing_rfb_regime_tributario_lucro_real.set_downstream(bronze_rbf_regime_tributario_lucro_real)
   
 
-rbf_regime_tributario()
+rfb_regime_tributario()
