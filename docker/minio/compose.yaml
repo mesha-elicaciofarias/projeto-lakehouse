@@ -8,8 +8,8 @@ x-minio-common: &minio-common
     - "9000"
     - "9001"
   environment:
-    MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-    MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    MINIO_ROOT_USER: ${MINIO_USER}
+    MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
   healthcheck:
     test: 
       - CMD-SHELL
@@ -69,11 +69,11 @@ services:
     ports:
       - mode: ingress
         target: 9000
-        published: "10000"
+        published: "${MINIO_API_PORT}"
         protocol: tcp
       - mode: ingress
         target: 9001
-        published: "10001"
+        published: "${MINIO_WEBUI_PORT}"
         protocol: tcp
     depends_on:
       minio1:

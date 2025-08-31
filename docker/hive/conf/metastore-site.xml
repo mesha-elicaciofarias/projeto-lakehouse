@@ -28,36 +28,6 @@
         <name>hive.metastore.authorization.storage.checks</name>
         <value>false</value>
     </property>
-    <!--  -->
-    <property>
-        <name>javax.jdo.option.ConnectionDriverName</name>
-        <value>org.postgresql.Driver</value>
-    </property>
-    <property>
-        <name>javax.jdo.option.ConnectionURL</name>
-        <value>jdbc:postgresql://hive-metastore-db:5432/hive_metastore</value>
-    </property>
-    <property>
-        <name>javax.jdo.option.ConnectionUserName</name>
-        <value>5bf1f2f4b72a5719</value>
-    </property>
-    <property>
-        <name>javax.jdo.option.ConnectionPassword</name>
-        <value>SlPMjiS7zq4UxJ7yruJlLK4CwNhAwQiY6pvrs8W2mio=</value>
-    </property>
-    <!--  -->
-    <property>
-        <name>fs.s3a.access.key</name>
-        <value>9a5edc7df42cfd71</value>
-    </property>
-    <property>
-        <name>fs.s3a.secret.key</name>
-        <value>DW4CyCit2CGO9gXyRtqQ7Lj6ZzQZm3xfS33ItBQpVbc=</value>
-    </property>
-    <property>
-        <name>fs.s3a.endpoint</name>
-        <value>http://host.docker.internal:10000</value>
-    </property>
     <property>
         <name>fs.s3a.path.style.access</name>
         <value>true</value>
@@ -70,5 +40,37 @@
         <name>fs.s3a.impl</name>
         <value>org.apache.hadoop.fs.s3a.S3AFileSystem</value>
     </property>
+    <property>
+        <name>fs.s3a.endpoint</name>
+        <value>http://host.docker.internal:10000</value>
+    </property> 
+    <!--  -->
+    <!-- <property>
+        <name>javax.jdo.option.ConnectionDriverName</name>
+        <value>org.postgresql.Driver</value>
+    </property>
+    <property>
+        <name>javax.jdo.option.ConnectionURL</name>
+        <value>jdbc:postgresql://host:5432/db</value>
+    </property>
+    <property>
+        <name>javax.jdo.option.ConnectionUserName</name>
+        <value>abc</value>
+    </property>
+    <property>
+        <name>javax.jdo.option.ConnectionPassword</name>
+        <value>abc</value>
+    </property> -->
+    <!--  -->
+    <!-- <property>
+        <name>fs.s3a.access.key</name>
+        <value>abc</value>
+    </property>
+    <property>
+        <name>fs.s3a.secret.key</name>
+        <value>abc</value>
+    </property>
+    -->
+
 
 </configuration>

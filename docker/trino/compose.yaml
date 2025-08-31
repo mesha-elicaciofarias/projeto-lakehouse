@@ -5,6 +5,16 @@ services:
     image: 'trinodb/trino:latest'
     container_name: trino-coordinator
     hostname: trino-coordinator
+    environment:
+      TRINO_USER: ${TRINO_USER}
+      TRINO_HOST: ${TRINO_HOST}
+      TRINO_PORT: ${TRINO_PORT}
+      HIVE_METASTORE_HOST: ${HIVE_METASTORE_HOST}
+      HIVE_METASTORE_PORT: ${HIVE_METASTORE_PORT}
+      MINIO_USER: ${MINIO_USER}
+      MINIO_PASSWORD: ${MINIO_PASSWORD}
+      MINIO_HOST: ${MINIO_HOST}
+      MINIO_API_PORT: ${MINIO_API_PORT}
     networks:
       - projeto-lakehouse
     ports:
@@ -22,6 +32,16 @@ services:
     image: 'trinodb/trino:latest'
     container_name: trino-worker-1
     hostname: trino-worker-1
+    environment:
+      TRINO_USER: ${TRINO_USER}
+      TRINO_HOST: ${TRINO_HOST}
+      TRINO_PORT: ${TRINO_PORT}
+      HIVE_METASTORE_HOST: ${HIVE_METASTORE_HOST}
+      HIVE_METASTORE_PORT: ${HIVE_METASTORE_PORT}
+      MINIO_USER: ${MINIO_USER}
+      MINIO_PASSWORD: ${MINIO_PASSWORD}
+      MINIO_HOST: ${MINIO_HOST}
+      MINIO_API_PORT: ${MINIO_API_PORT}
     networks:
       - projeto-lakehouse
     volumes:
@@ -33,6 +53,16 @@ services:
   trino-worker-2:
     image: 'trinodb/trino:latest'
     container_name: trino-worker-2
+    environment:
+      TRINO_USER: ${TRINO_USER}
+      TRINO_HOST: ${TRINO_HOST}
+      TRINO_PORT: ${TRINO_PORT}
+      HIVE_METASTORE_HOST: ${HIVE_METASTORE_HOST}
+      HIVE_METASTORE_PORT: ${HIVE_METASTORE_PORT}
+      MINIO_USER: ${MINIO_USER}
+      MINIO_PASSWORD: ${MINIO_PASSWORD}
+      MINIO_HOST: ${MINIO_HOST}
+      MINIO_API_PORT: ${MINIO_API_PORT}
     hostname: trino-worker-2
     networks:
       - projeto-lakehouse

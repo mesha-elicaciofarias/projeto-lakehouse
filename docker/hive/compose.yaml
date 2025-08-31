@@ -23,30 +23,30 @@ services:
     restart: always
 
   hive-metastore-server:
-    image: apache/hive:standalone-metastore-4.1.0  # Use a suitable Hive version
+    build: .
     container_name: hive-metastore-server
     hostname: hive-metastore-server
     environment:
       SERVICE_NAME: metastore
       DB_DRIVER: postgres
-
+      SERVICE_OPTS: >-
+        -Djavax.jdo.option.ConnectionDriverName=org.postgresql.Driver
+        -Djavax.jdo.option.ConnectionURL=jdbc:postgresql://hive-metastore-db:5432/hive_metastore
+        -Djavax.jdo.option.ConnectionUserName=${HIVE_METASTORE_USER}
+        -Djavax.jdo.option.ConnectionPassword=${HIVE_METASTORE_PASSWORD}
+      AWS_ACCESS_KEY_ID: ${MINIO_USER}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_PASSWORD} 
     networks:
       - projeto-lakehouse
     ports:
       - mode: ingress
         target: 9083
-        published: "9083"
+        published: "${HIVE_METASTORE_PORT}"
         protocol: tcp
     depends_on:
       hive-metastore-db:
         condition: service_healthy
         required: true
-    volumes:
-    # precisa baixar esses arquivos e salvar na pasta hive/jars
-      # - ./jars/postgresql-42.7.7.jar:/opt/hive/lib/postgresql-42.7.7.jar
-      # - ./jars/hadoop-aws-3.4.0.jar:/opt/hive/lib/hadoop-aws-3.4.0.jar
-      # - ./jars/bundle-2.32.25.jar:/opt/hive/lib/bundle-2.32.25.jar
-      - ./conf/metastore-site.xml:/opt/hive/conf/metastore-site.xml
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: always
