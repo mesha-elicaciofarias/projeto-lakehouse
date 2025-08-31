@@ -689,7 +689,7 @@ Dentro da DAG tem 10 tasks:
 
 O objetivo do código foi:
 
-- Criar um notebook para task;
+- Criar um notebook para cada task;
 - Processar as informações e salvar em pastas por tipo, assim como foi feito da camada landing.
 
 ### 1. Funções de limpeza de texto
@@ -816,5 +816,108 @@ A função `download_and_extract`:
 2. Validar e extrair os arquivos CSV.  
 3. Enviar os arquivos para o MinIO.  
 4. Limpar a pasta de staging.  
+
+---
+
+## 24 Processamento dos arquivos da camada landing para bronze – Regime Tributário
+
+O objetivo do código foi:
+
+- Criar um notebook para cada task;
+- Processar, padronizar as informações e salvar em pastas por tipo, assim como foi feito da camada landing.
+- Salvar os dados no Delta Lake da camada bronze.
+
+1. Funções de padronização de texto
+
+  * padronizar_texto(df: DataFrame)
+
+    * Aplica strip e upper em todas as colunas do tipo string.
+
+    * Remove espaços desnecessários no início/fim e transforma todos os textos em minúsculos.
+
+    * Garantia de consistência para joins e comparações futuras.
+
+2. Funções de padronização de números e códigos
+
+  * padronizar_numeros_e_codigos(df: DataFrame)
+
+    * Converte colunas inteiras (int, bigint) para int.
+
+    * Converte colunas decimais (double, float) para double.
+
+    * Padroniza CNPJs nas colunas cnpj e cnpj_da_scp:
+
+    * Remove todos os caracteres que não são números (\D).
+
+    * Preenche com zeros à esquerda até 14 dígitos (lpad).
+
+    * Garantia de consistência em identificadores e cálculos.
+
+3. Leitura do arquivo CSV
+
+ - Os arquivos CSV são lidos do S3 (MinIO) usando Spark, via s3a://:
+
+ - bucket = landing
+
+- pasta = rfb/regime_tributario/lucro_real/ (exemplo)
+
+- input_path = s3a://landing/rfb/regime_tributario/lucro_real/*.csv
+
+Permite processar múltiplos arquivos de uma vez, mantendo a consistência.
+
+4. Aplicação das padronizações
+
+- O DataFrame lido passa pelas funções de padronização:
+
+- padronizar_texto(df) → normaliza todos os textos.
+
+- padronizar_numeros_e_codigos(df) → normaliza números e códigos.
+
+- Resultado: dados limpos, consistentes e prontos para camadas superiores.
+
+5. Escrita no Delta Lake
+
+- O DataFrame final é salvo na camada bronze no formato Delta:
+
+~~~bash
+
+df.write.format("delta") \
+        .mode("overwrite") \
+        .option("overwriteSchema", "true") \
+        .save(output_path)
+
+~~~
+
+- mode("overwrite") → sobrescreve os dados antigos.
+
+- option("overwriteSchema", "true") → atualiza o schema caso haja alterações.
+
+- output_path organiza os dados por subcategoria e tabela, por exemplo:
+
+~~~bash
+s3a://bronze/rfb/regime_tributario/regime_tributario_lucro_real/
+~~~
+
+6. Logs e verificação
+
+- O processo registra logs em cada etapa:
+
+    - Arquivo CSV lido do bucket de origem.
+
+    - Colunas e tipos padronizados.
+
+    - Arquivo salvo em Delta Lake no caminho de saída.
+
+- Ao final, é feita a contagem de linhas (df.count()) para confirmar o total de registros processados.
+
+7. Configuração para DAG (Airflow)
+
+- O notebook/task foi preparado para integração com o Airflow, garantindo:
+
+- Processamento automático de novos arquivos.
+
+- Fluxo contínuo da camada landing para bronze.
+
+- Padronização consistente de todos os arquivos de regime tributário.
 
 ---
